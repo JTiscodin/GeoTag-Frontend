@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import axios from "axios";
 import {
   Select,
   SelectContent,
@@ -20,18 +21,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import { useForm } from "react-hook-form";
+import { ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
+
 export default function Register() {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-  };
-  const next = useRef();
+  const {
+    register,
+    setValue,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm();
+
+  const onSubmit = async (data) => {
+    axios.post("http://localhost:3000/api/register", data).then((response) => console.log(response))
+
+  }
+
+  const setQuality = (data) => {
+    console.log(data)
+    setValue("quality", data)
+  }
+
+  const setOrientation = (value)=> {
+    setValue("orientation", value)
+  }
+
+
   return (
     <div className="min-h-screen flex justify-center items-center">
       <Tabs defaultValue="account" className="w-[400px]">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="account">User Details</TabsTrigger>
-            <TabsTrigger ref={next} value="password">
+            <TabsTrigger value="password">
               Camera Specs
             </TabsTrigger>
           </TabsList>
@@ -46,7 +70,7 @@ export default function Register() {
               <CardContent className="space-y-2">
                 <div className="space-y-1">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="name" />
+                  <Input {...register("name")} id="name" placeholder="name" />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="username">Phone No</Label>
@@ -55,11 +79,12 @@ export default function Register() {
                     type="text"
                     placeholder="10 digit mobile number"
                     pattern="\d*"
+                    {...register("username")}
                   />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="address">Address</Label>
-                  <Input id="address" type="text" placeholder="Address" />
+                  <Input {...register("address")} id="address" type="text" placeholder="Address" />
                 </div>
               </CardContent>
               <CardFooter>
@@ -79,13 +104,14 @@ export default function Register() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex gap-5 text-center items-center">
-                  <Label htmlFor="lat">Lattitude: </Label>
-                  <Input id="lat" />
-                  <Label htmlFor="long">Longitude: </Label>
-                  <Input id="long" />
+                  <Label htmlFor="lat" >Lattitude: </Label>
+                  <Input id="lat" {...register("lat")}/>
+                  <Label htmlFor="long" >Longitude: </Label>
+                  <Input id="long" {...register("long")}/>
                 </div>
                 <div className="space-y-1">
-                  <Select defaultValue="480p">
+                  <Label htmlFor="quality">Quality</Label>
+                  <Select  onValueChange={setQuality} {...register("quality",{value:"480p"})} id="quality" defaultValue="480p">
                     <SelectTrigger>
                       <SelectValue />
                       <SelectContent>
@@ -103,21 +129,21 @@ export default function Register() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="model">Model</Label>
-                  <Input id="model" type="text" placeholder="Camera model" />
+                  <Input {...register("model")} id="model" type="text" placeholder="Camera model" />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="capacity">Recording Capacity</Label>
-                  <Input id="capacity" type="text" placeholder="no of days" />
+                  <Input {...register("capacity")} id="capacity" type="text" placeholder="no of days" />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="fov">Field of View</Label>
-                  <Input id="fov" type="text" placeholder="Field of View" />
+                  <Input {...register("fov")} id="fov" type="text" placeholder="Field of View" />
                 </div>
                 <div className="space-y-1">
-                  <CardDescription>Camera Orientation</CardDescription>
-                  <Select defaultValue="north">
+                  <Label id="orientation">Camera Orientation</Label>
+                  <Select onValueChange={setOrientation} {...register("orientation", {value: "north"})}  htmlFor="orientation" defaultValue="north">
                     <SelectTrigger>
-                      <SelectValue placeholder="orientation"/>
+                      <SelectValue placeholder="orientation" />
                       <SelectContent>
                         <SelectItem value="north">North</SelectItem>
                         <SelectItem value="north-east">North-East</SelectItem>
@@ -130,6 +156,10 @@ export default function Register() {
                       </SelectContent>
                     </SelectTrigger>
                   </Select>
+                </div>
+                <div>
+                  <Label htmlFor="url">Url</Label>
+                  <Input {...register("url")} type="text" id="url" placeholder="Url" />
                 </div>
               </CardContent>
               <CardFooter>
