@@ -3,8 +3,8 @@ import mongoose from "mongoose"
 import connectDB from "@/utils/db"
 import User from "../../../models/userSchema.js"
 export async function GET(request,response){
-
-    return NextResponse.json({msg: "Hello there"})
+    const users = await User.find({})
+    return NextResponse.json(users)
 }
 
 

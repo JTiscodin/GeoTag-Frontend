@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { z } from "zod";
 import {
   Card,
   CardContent,
@@ -14,6 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 import {
   Select,
   SelectContent,
@@ -25,6 +29,22 @@ import {
 import { useForm } from "react-hook-form";
 import { ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 
+const userSchema = z.object({
+  username: z.string().min(3),
+  address: z.string().min(6),
+  phone: z.coerce
+    .number({ invalid_type_error: "Should be a number" })
+    .positive()
+    .gte(1000000000, "Should be a 10 digit number")
+    .lte(9999999999, "Should be a 10 digit number"),
+  location: z.object({ lat: z.string(), long: z.string() }),
+  quality: z.string(),
+  model: z.string(),
+  capacity: z.string(),
+  fov: z.string(),
+  url: z.string(),
+});
+
 export default function Register() {
   const {
     register,
@@ -32,22 +52,23 @@ export default function Register() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({resolver: zodResolver(userSchema)});
 
-  const onSubmit = async (data) => {
-    axios.post("http://localhost:3000/api/register", data).then((response) => console.log(response))
-
-  }
+  const onSubmit = (data) => {
+    console.log("submitted");
+    axios
+      .post("http://localhost:3000/api/register", data)
+      .then((response) => console.log(response));
+  };
 
   const setQuality = (data) => {
-    console.log(data)
-    setValue("quality", data)
-  }
+    console.log(data);
+    setValue("quality", data);
+  };
 
-  const setOrientation = (value)=> {
-    setValue("orientation", value)
-  }
-
+  const setOrientation = (value) => {
+    setValue("orientation", value);
+  };
 
   return (
     <div className="min-h-screen flex justify-center items-center">
@@ -55,9 +76,7 @@ export default function Register() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="account">User Details</TabsTrigger>
-            <TabsTrigger value="password">
-              Camera Specs
-            </TabsTrigger>
+            <TabsTrigger value="password">Camera Specs</TabsTrigger>
           </TabsList>
           <TabsContent value="account">
             <Card>
@@ -70,21 +89,60 @@ export default function Register() {
               <CardContent className="space-y-2">
                 <div className="space-y-1">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input {...register("name")} id="name" placeholder="name" />
+                  <Input
+                    {...register("username")}
+                    id="name"
+                    placeholder="name"
+                  />
+                  {errors.username && (
+                    <Alert
+                      variant="destructive"
+                      className="w-[20vw] border-none"
+                    >
+                      <AlertDescription>
+                        {errors.username.message}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="username">Phone No</Label>
+                  <Label htmlFor="phone">Phone No</Label>
                   <Input
-                    id="username"
+                    id="phone"
                     type="text"
                     placeholder="10 digit mobile number"
                     pattern="\d*"
-                    {...register("username")}
+                    {...register("phone")}
                   />
+                  {errors.phone && (
+                    <Alert
+                      variant="destructive"
+                      className="w-[20vw] border-none"
+                    >
+                      <AlertDescription>
+                        {errors.phone.message}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="address">Address</Label>
-                  <Input {...register("address")} id="address" type="text" placeholder="Address" />
+                  <Input
+                    {...register("address")}
+                    id="address"
+                    type="text"
+                    placeholder="Address"
+                  />
+                  {errors.address && (
+                    <Alert
+                      variant="destructive"
+                      className="w-[20vw] border-none"
+                    >
+                      <AlertDescription>
+                        {errors.address.message}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </CardContent>
               <CardFooter>
@@ -104,14 +162,31 @@ export default function Register() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex gap-5 text-center items-center">
-                  <Label htmlFor="lat" >Lattitude: </Label>
-                  <Input id="lat" {...register("lat")}/>
-                  <Label htmlFor="long" >Longitude: </Label>
-                  <Input id="long" {...register("long")}/>
+                  <Label htmlFor="lat">Lattitude: </Label>
+                  <Input id="lat" {...register("location.lat")} />
+                  <Label htmlFor="long">Longitude: </Label>
+                  <Input id="long" {...register("location.long")} />
+                  {errors.location?.lat ||
+                    (errors.location?.long && (
+                      <Alert
+                        variant="destructive"
+                        className="w-[20vw] border-none"
+                      >
+                        <AlertDescription>
+                          {errors.location?.lat?.message ||
+                            errors.location?.long?.message}
+                        </AlertDescription>
+                      </Alert>
+                    ))}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="quality">Quality</Label>
-                  <Select  onValueChange={setQuality} {...register("quality",{value:"480p"})} id="quality" defaultValue="480p">
+                  <Select
+                    onValueChange={setQuality}
+                    {...register("quality", { value: "480p" })}
+                    id="quality"
+                    defaultValue="480p"
+                  >
                     <SelectTrigger>
                       <SelectValue />
                       <SelectContent>
@@ -129,19 +204,57 @@ export default function Register() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="model">Model</Label>
-                  <Input {...register("model")} id="model" type="text" placeholder="Camera model" />
+                  <Input
+                    {...register("model")}
+                    id="model"
+                    type="text"
+                    placeholder="Camera model"
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="capacity">Recording Capacity</Label>
-                  <Input {...register("capacity")} id="capacity" type="text" placeholder="no of days" />
+                  <Input
+                    {...register("capacity")}
+                    id="capacity"
+                    type="text"
+                    placeholder="no of days"
+                  />
+                  {errors.capacity && (
+                    <Alert
+                      variant="destructive"
+                      className="w-[20vw] border-none"
+                    >
+                      <AlertDescription>
+                        {errors.capacity.message}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="fov">Field of View</Label>
-                  <Input {...register("fov")} id="fov" type="text" placeholder="Field of View" />
+                  <Input
+                    {...register("fov")}
+                    id="fov"
+                    type="text"
+                    placeholder="Field of View"
+                  />
+                  {errors.fov && (
+                    <Alert
+                      variant="destructive"
+                      className="w-[20vw] border-none"
+                    >
+                      <AlertDescription>{errors.fov.message}</AlertDescription>
+                    </Alert>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label id="orientation">Camera Orientation</Label>
-                  <Select onValueChange={setOrientation} {...register("orientation", {value: "north"})}  htmlFor="orientation" defaultValue="north">
+                  <Select
+                    onValueChange={setOrientation}
+                    {...register("orientation", { value: "north" })}
+                    htmlFor="orientation"
+                    defaultValue="north"
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="orientation" />
                       <SelectContent>
@@ -159,7 +272,12 @@ export default function Register() {
                 </div>
                 <div>
                   <Label htmlFor="url">Url</Label>
-                  <Input {...register("url")} type="text" id="url" placeholder="Url" />
+                  <Input
+                    {...register("url")}
+                    type="text"
+                    id="url"
+                    placeholder="Url"
+                  />
                 </div>
               </CardContent>
               <CardFooter>
